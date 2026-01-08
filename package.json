@@ -1,0 +1,13 @@
+{
+  "name": "@aravindkumar-04f13710-c671-4e9d-b59b-6de0e7d270df/source",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {},
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "@nx/js": "22.3.3",
+    "@nx/workspace": "22.3.3",
+    "nx": "22.3.3"
+  }
+}
