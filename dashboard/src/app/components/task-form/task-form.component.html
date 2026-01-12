@@ -1,0 +1,148 @@
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50 py-8">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-6">
+      <a routerLink="/tasks" class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 mb-4 transition-colors">
+        ← Back to Tasks
+      </a>
+      <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        {{ isEditMode ? 'Edit Task' : 'Create New Task' }}
+      </h1>
+      <p class="mt-2 text-gray-600">
+        {{ isEditMode ? 'Update your task details below' : 'Fill in the details to create a new task' }}
+      </p>
+    </div>
+
+    <div class="bg-white shadow-xl rounded-2xl border border-gray-100">
+      <div class="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+        <div class="flex items-center space-x-3">
+          <div class="h-10 w-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+            <span class="text-white text-lg font-bold">📋</span>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">
+              {{ isEditMode ? 'Task Details' : 'New Task Information' }}
+            </h2>
+            <p class="text-sm text-gray-500">All fields marked with * are required</p>
+          </div>
+        </div>
+      </div>
+
+      <form [formGroup]="taskForm" (ngSubmit)="onSubmit()" class="p-8 space-y-6">
+        <!-- Error Message -->
+        <div *ngIf="error" class="rounded-xl bg-red-50 border border-red-200 p-4">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <span class="text-red-400 text-xl">!</span>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-semibold text-red-800">{{ error }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div>
+          <label for="title" class="block text-sm font-semibold text-gray-700 mb-2">
+            Title <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="title"
+            formControlName="title"
+            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 focus:bg-white"
+            placeholder="e.g., Review quarterly reports"
+          />
+          <div *ngIf="taskForm.get('title')?.invalid && taskForm.get('title')?.touched" class="mt-2 text-sm text-red-600">
+            Title is required and must be at least 3 characters
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
+            Description <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="5"
+            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 focus:bg-white resize-none"
+            placeholder="Provide a detailed description of the task..."
+          ></textarea>
+          <div *ngIf="taskForm.get('description')?.invalid && taskForm.get('description')?.touched" class="mt-2 text-sm text-red-600">
+            Description is required and must be at least 10 characters
+          </div>
+        </div>
+
+        <!-- Status and Category Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Status -->
+          <div>
+            <label for="status" class="block text-sm font-semibold text-gray-700 mb-2">
+              Status <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="status"
+              formControlName="status"
+              class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 focus:bg-white"
+            >
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+
+          <!-- Category -->
+          <div>
+            <label for="category" class="block text-sm font-semibold text-gray-700 mb-2">
+              Category <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="category"
+              formControlName="category"
+              class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 focus:bg-white"
+            >
+              <option value="work">Work</option>
+              <option value="personal">Personal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Assigned To ID (Optional) -->
+        <div>
+          <label for="assignedToId" class="block text-sm font-semibold text-gray-700 mb-2">
+            Assigned To (Optional)
+          </label>
+          <input
+            type="text"
+            id="assignedToId"
+            formControlName="assignedToId"
+            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 focus:bg-white"
+            placeholder="Enter user ID to assign this task"
+          />
+          <p class="mt-1 text-xs text-gray-500">Leave blank if the task is not assigned to anyone</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 mt-8">
+          <button
+            type="button"
+            (click)="onCancel()"
+            class="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 transform hover:scale-105 active:scale-95"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="taskForm.invalid || loading"
+            class="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transform transition-all duration-200 hover:scale-105 active:scale-95 disabled:transform-none"
+          >
+            <span *ngIf="!loading">{{ isEditMode ? 'Update Task' : 'Create Task' }}</span>
+            <span *ngIf="loading">{{ isEditMode ? 'Updating...' : 'Creating...' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

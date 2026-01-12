@@ -1,96 +1,92 @@
-# Aravindkumar04f13710C6714e9dB59b6de0e7d270df
+# Secure Task Management System (Nx Monorepo)
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Role-based task management with NestJS 11 + TypeORM (SQLite) and Angular 17 inside an Nx workspace. Includes shared auth/data libraries, JWT authentication, RBAC guards, and audit logging.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+---
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+## Quick start
+1. Install deps: `npm install`
+2. Create `api/.env` (see below) or rely on defaults.
+3. Start API: `npx nx serve api` (listens on `http://localhost:3333/api`, CORS enabled, creates `taskdb.sqlite` if missing).
+4. Seed a demo account (after the API is up): `node scripts/create-test-user.js`  
+   - email: `test@example.com` / password: `password123` / role: owner (org id is printed)
+5. Start dashboard: `npx nx serve dashboard` (uses `environment.apiUrl`, default `http://localhost:3333/api`).
 
-## Run tasks
+---
 
-To run tasks with Nx use:
-
-```sh
-npx nx <target> <project-name>
+## Backend environment (`api/.env`)
 ```
-
-For example:
-
-```sh
-npx nx build myproject
+PORT=3333
+DB_PATH=taskdb.sqlite        # defaults to repo root if unset
+JWT_SECRET=super-secret-key
+JWT_EXPIRES_IN=1d
+NODE_ENV=development
 ```
+ConfigModule loads `api/.env` first, then workspace `.env`. TypeORM synchronize is off when `NODE_ENV=production`.
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+---
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Frontend API target
+Update `dashboard/src/environments/environment.ts` (and `.prod`) `apiUrl` if your backend host/port changes. No runtime `.env` is needed; default is `http://localhost:3333/api`.
 
-## Add new projects
+---
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+## Architecture
+- `api/` — NestJS backend (JWT auth, RBAC guards, tasks, audit log, TypeORM SQLite)
+- `dashboard/` — Angular dashboard (login/register, task CRUD, audit log view)
+- `libs/auth/` — Decorators/guards for roles & permissions
+- `libs/data/` — Shared enums/interfaces for users, tasks, organizations
 
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
-```
+---
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+## Data model
+- **User**: id, email, password (hashed), role (`owner|admin|viewer`), organizationId; timestamps.
+- **Organization**: id, name, parentId (supports parent/child visibility); relations to users and tasks.
+- **Task**: id, title, description, status (`todo|in_progress|done`), category (`work|personal`), organizationId, createdById, assignedToId?; timestamps.
+- **AuditLog**: id, action, resourceType, resourceId, userId, details, createdAt.
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
+---
 
-# Generate a library
-npx nx g @nx/react:lib some-lib
-```
+## Access control
+- Roles: owner (full org scope), admin (manage within org + parent/child visibility), viewer (read-only in org).
+- Permissions:  
+  - CREATE_TASK / UPDATE_TASK / DELETE_TASK: owner, admin  
+  - READ_TASK: owner, admin, viewer (scoped)  
+  - READ_AUDIT_LOG: owner, admin
+- Guards/decorators: `JwtAuthGuard`, `RbacGuard`, `PermissionGuard`, `@Roles()`, `@RequirePermissions()`, `@Public()`, `@CurrentUser()`.
+- Scope: viewer -> org only; owner/admin -> org + parent/child org tasks/audit entries.
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+---
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## API (REST)
+Base URL: `http://localhost:3333/api`
 
-## Set up CI!
+- `POST /auth/register` — `{ email, password, role, organizationId }` -> `{ access_token, user }`
+- `POST /auth/login` — `{ email, password }` -> `{ access_token, user }`
+- `GET /tasks` — list tasks within scoped orgs
+- `GET /tasks/:id` — fetch one (scoped)
+- `POST /tasks` — create (owner/admin) `{ title, description, category, status?, assignedToId? }`
+- `PUT /tasks/:id` — update (owner/admin)
+- `DELETE /tasks/:id` — delete (owner/admin)
+- `GET /tasks/audit-log` — audit entries for scoped users (owner/admin)
 
-### Step 1
+Auth header: `Authorization: Bearer <jwt>`
 
-To connect to Nx Cloud, run the following command:
+---
 
-```sh
-npx nx connect
-```
+## Running & tests
+- API dev: `npx nx serve api`
+- API build: `npx nx build api --configuration=production`
+- Dashboard dev: `npx nx serve dashboard`
+- Dashboard build: `npx nx build dashboard --configuration=production`
+- API unit tests (Jest): `npx nx test api`
+- Dashboard unit tests (Angular TestBed runner): `npx nx test dashboard`
+- API e2e (Jest): `npx nx e2e api-e2e` (expects API on `PORT`, default 3333)
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
+---
 
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Future considerations
+- JWT refresh/rotation, CSRF protection, secure cookies for production.
+- Additional RBAC granularity and caching for permission checks.
+- Indexing/pagination for large orgs and background audit sink.
+- UX polish: drag-and-drop ordering, completion analytics, keyboard shortcuts, dark/light toggle.

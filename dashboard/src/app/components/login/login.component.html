@@ -1,0 +1,74 @@
+<div class="min-h-screen bg-white relative overflow-hidden">
+  <!-- Main content -->
+  <div class="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+    <div class="w-full max-w-md">
+      <!-- Header text -->
+      <div class="mb-12 text-left">
+        <h1 class="text-5xl font-bold text-black mb-4 leading-tight">Welcome Back</h1>
+        <p class="text-lg text-black/70">Sign in to manage your tasks efficiently</p>
+      </div>
+
+      <!-- Login form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Email Input -->
+        <div>
+          <label for="email" class="block text-sm font-semibold text-black mb-3">
+            Email Address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+            formControlName="email"
+            class="block w-full px-4 py-4 border-2 border-black bg-white text-black placeholder-black/40 focus:outline-none focus:ring-0 transition-all"
+            placeholder="you@example.com"
+          />
+          <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" 
+               class="mt-2 text-sm text-red-600">
+            Please enter a valid email address
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div>
+          <label for="password" class="block text-sm font-semibold text-black mb-3">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            formControlName="password"
+            class="block w-full px-4 py-4 border-2 border-black bg-white text-black placeholder-black/40 focus:outline-none focus:ring-0 transition-all"
+            placeholder="Enter your password"
+          />
+          <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" 
+               class="mt-2 text-sm text-red-600">
+            Password must be at least 6 characters
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="error" class="bg-red-50 border-2 border-red-500 p-4">
+          <p class="text-sm font-medium text-red-800">{{ error }}</p>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <button
+            type="submit"
+            [disabled]="loginForm.invalid || loading"
+            class="w-full bg-black text-white py-4 px-6 font-semibold border-2 border-black hover:bg-white hover:text-black focus:outline-none focus:ring-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-black disabled:hover:text-white"
+          >
+            <span *ngIf="!loading">Sign In</span>
+            <span *ngIf="loading">Signing in...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
